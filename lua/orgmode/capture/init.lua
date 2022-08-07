@@ -323,7 +323,8 @@ function Capture:kill()
     self.wipeout_autocmd_id = nil
   end
   local prev_winnr = vim.api.nvim_buf_get_var(0, 'org_prev_window')
-  vim.api.nvim_win_close(0, true)
+  -- vim.api.nvim_win_close(0, true)
+  vim.cmd([[:wq]])
   if prev_winnr and vim.api.nvim_win_is_valid(prev_winnr) then
     vim.api.nvim_set_current_win(prev_winnr)
   end
