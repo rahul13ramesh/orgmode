@@ -10,6 +10,9 @@ local function sort_todos(todos)
     if a:get_priority_sort_value() ~= b:get_priority_sort_value() then
       return a:get_priority_sort_value() > b:get_priority_sort_value()
     end
+    if a.todo_keyword.value ~= b.todo_keyword.value then
+      return a.todo_keyword.value >b.todo_keyword.value
+    end
     return a.category < b.category
   end)
   return todos

@@ -7,46 +7,18 @@ local AgendaItem = require('orgmode.agenda.agenda_item')
 local AgendaFilter = require('orgmode.agenda.filter')
 local utils = require('orgmode.utils')
 
-local function sort_by_date_or_priority_or_category(a, b)
+local function sort_by_date_or_priority(a, b)
   if a.headline:get_priority_sort_value() ~= b.headline:get_priority_sort_value() then
     return a.headline:get_priority_sort_value() > b.headline:get_priority_sort_value()
   end
-  if not a.headline_date:is_same(b.headline_date, 'day') then
-    return a.headline_date:is_before(b.headline_date)
-  end
-  return a.index < b.index
+  return a.headline_date:is_before(b.headline_date)
 end
 
 ---@param agenda_items AgendaItem[]
 ---@return AgendaItem[]
 local function sort_agenda_items(agenda_items)
   table.sort(agenda_items, function(a, b)
-    if a.is_same_day and b.is_same_day then
-      if not a.headline_date.date_only and b.headline_date.date_only then
-        return true
-      end
-      if not b.headline_date.date_only and a.headline_date.date_only then
-        return false
-      end
-      if not a.headline_date.date_only and not b.headline_date.date_only then
-        return a.headline_date:is_before(b.headline_date)
-      end
-      return sort_by_date_or_priority_or_category(a, b)
-    end
-
-    if a.is_same_day and not b.is_same_day then
-      if not a.headline_date.date_only or (b.headline_date:is_none() and not a.headline_date:is_none()) then
-        return true
-      end
-    end
-
-    if not a.is_same_day and b.is_same_day then
-      if not b.headline_date.date_only or (a.headline_date:is_none() and not b.headline_date:is_none()) then
-        return false
-      end
-    end
-
-    return sort_by_date_or_priority_or_category(a, b)
+    return sort_by_date_or_priority(a, b)
   end)
   return agenda_items
 end
@@ -156,7 +128,6 @@ function AgendaView:_build_items()
     end
 
     date.agenda_items = sort_agenda_items(date.agenda_items)
-
     table.insert(agenda_days, date)
   end
 
@@ -174,7 +145,7 @@ function AgendaView:build()
     local is_today = day:is_today()
     local is_weekend = day:is_weekend()
 
-    if is_today or is_weekend then
+    if is_today then
       table.insert(highlights, {
         hlgroup = 'OrgBold',
         range = Range:new({
@@ -198,6 +169,21 @@ function AgendaView:build()
     })
     local category_len = math.max(11, (longest_items.category + 1))
     local date_len = math.min(11, longest_items.label)
+
+    if is_today then
+        local now_time = Date:now()
+        for _, agenda_item in ipairs(agenda_items) do
+            agenda_item.hl_recent = 1
+        end
+        for _, agenda_item in ipairs(agenda_items) do
+            if #agenda_item.highlights then
+                if now_time:is_before(agenda_item.headline_date, 'min') then
+                    agenda_item.hl_recent = 0
+                    break
+                end
+            end
+        end
+    end
 
     for _, agenda_item in ipairs(agenda_items) do
       table.insert(content, AgendaView.build_agenda_item_content(agenda_item, category_len, date_len, #content))
@@ -267,7 +253,7 @@ end
 ---@return table
 function AgendaView.build_agenda_item_content(agenda_item, longest_category, longest_date, line_nr)
   local headline = agenda_item.headline
-  local category = '  ' .. utils.pad_right(string.format('%s:', headline:get_category()), longest_category)
+  local category = '  ' .. utils.pad_right(string.format('%s', headline:get_category()), longest_category)
   local date = agenda_item.label
   if date ~= '' then
     date = ' ' .. utils.pad_right(agenda_item.label, longest_date)
@@ -278,8 +264,9 @@ function AgendaView.build_agenda_item_content(agenda_item, longest_category, lon
     todo_padding = ' '
   end
   todo_keyword = todo_padding .. todo_keyword
-  local line = string.format('%s%s%s %s', category, date, todo_keyword, headline.title)
-  local todo_keyword_pos = string.format('%s%s%s', category, date, todo_padding):len()
+  local line = string.format('%s%s %s', category, date, headline.title)
+  local date_pos = string.format('%s', category):len()
+  local date_pos_end = string.format('%s%s', category, date):len()
   local winwidth = utils.winwidth()
   if #headline.tags > 0 then
     local tags_string = headline:tags_to_string()
@@ -287,6 +274,7 @@ function AgendaView.build_agenda_item_content(agenda_item, longest_category, lon
     local indent = string.rep(' ', padding_length)
     line = string.format('%s%s%s', line, indent, tags_string)
   end
+  
 
   local item_highlights = {}
   if #agenda_item.highlights then
@@ -294,28 +282,18 @@ function AgendaView.build_agenda_item_content(agenda_item, longest_category, lon
       hl.range = Range:new({
         start_line = line_nr + 1,
         end_line = line_nr + 1,
-        start_col = 1,
-        end_col = 0,
+        start_col = date_pos + 1,
+        end_col = date_pos_end + 1,
       })
       if hl.todo_keyword then
-        hl.range.start_col = todo_keyword_pos + 1
-        hl.range.end_col = todo_keyword_pos + hl.todo_keyword:len() + 1
+        hl.range.start_col = 10000
+        hl.range.end_col = -1
+      end
+      if agenda_item.hl_recent == 0 then
+          hl.hlgroup = 'OrgNow'
       end
       return hl
     end, agenda_item.highlights)
-  end
-
-  if headline:is_clocked_in() then
-    table.insert(item_highlights, {
-      range = Range:new({
-        start_line = line_nr + 1,
-        end_line = line_nr + 1,
-        start_col = 1,
-        end_col = 0,
-      }),
-      hl_group = 'Visual',
-      whole_line = true,
-    })
   end
 
   return {

@@ -656,9 +656,9 @@ function Date:humanize(from)
     return 'Today'
   end
   if diff < 0 then
-    return math.abs(diff) .. ' d. ago'
+    return '+' .. math.abs(diff) .. 'd'
   end
-  return 'In ' .. diff .. ' d.'
+  return '-' .. diff .. 'd'
 end
 
 ---@return boolean

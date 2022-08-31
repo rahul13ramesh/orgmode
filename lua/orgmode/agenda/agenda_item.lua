@@ -3,10 +3,10 @@ local hl_map = Highlights.get_agenda_hl_map()
 local config = require('orgmode.config')
 local FUTURE_DEADLINE_AS_WARNING_DAYS = math.floor(config.org_deadline_warning_days / 2)
 local function add_padding(datetime)
-  if datetime:len() >= 11 then
+  if datetime:len() >= 12 then
     return datetime .. ' '
   end
-  return datetime .. string.rep('.', 11 - datetime:len()) .. ' '
+  return datetime .. string.rep(' ', 12 - datetime:len()) .. ' '
 end
 
 ---@class AgendaItem
@@ -140,41 +140,41 @@ function AgendaItem:_is_valid_for_date()
 end
 
 function AgendaItem:_generate_label()
-  local time = not self.headline_date.date_only and add_padding(self.headline_date:format_time()) or ''
+  local time = not self.headline_date.date_only and self.headline_date:format_time() or ''
   if self.headline_date:is_deadline() then
     if self.is_same_day then
-      return time .. 'Deadline:'
+      return add_padding('[D] ' .. time)
     end
-    return self.headline_date:humanize(self.date) .. ':'
+    return add_padding('[D] ' .. self.headline_date:humanize(self.date))
   end
 
   if self.headline_date:is_scheduled() then
     if self.is_same_day then
-      return time .. 'Scheduled:'
+      return add_padding('[S] ' .. time)
     end
 
     local diff = math.abs(self.date:diff(self.headline_date))
 
-    return 'Sched. ' .. diff .. 'x:'
+    return add_padding('[S] +' .. diff .. 'd')
   end
 
   if self.headline_date.is_date_range_start then
     if not self.is_in_date_range then
-      return time
+      return add_padding(time)
     end
     local range = string.format('(%d/%d):', self.date:diff(self.headline_date) + 1, self.date_range_days)
     if not self.is_same_day then
-      return range
+      return add_padding(range)
     end
-    return time .. range
+    return add_padding(time .. range)
   end
 
   if self.headline_date.is_date_range_end then
     local range = string.format('(%d/%d):', self.date_range_days, self.date_range_days)
-    return time .. range
+    return add_padding(time .. range)
   end
 
-  return time
+  return add_padding('[ ] ' .. time)
 end
 
 function AgendaItem:_generate_highlight()
@@ -187,7 +187,7 @@ function AgendaItem:_generate_highlight()
       if diff <= FUTURE_DEADLINE_AS_WARNING_DAYS then
         return { hlgroup = hl_map.warning }
       end
-      return nil
+      return { hlgroup = hl_map.ok }
     end
 
     return { hlgroup = hl_map.deadline }
@@ -201,7 +201,7 @@ function AgendaItem:_generate_highlight()
     return { hlgroup = hl_map.ok }
   end
 
-  return nil
+  return { hlgroup = hl_map.ok }
 end
 
 function AgendaItem:_add_keyword_highlight()

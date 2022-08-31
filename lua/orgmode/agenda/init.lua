@@ -141,7 +141,6 @@ function Agenda:_render(skip_rebuild)
   if vim.w.org_window_split_mode == 'horizontal' then
     local win_height = math.max(math.min(34, #self.content), config.org_agenda_min_height)
     if vim.w.org_window_pos and vim.deep_equal(vim.fn.win_screenpos(0), vim.w.org_window_pos) then
-      vim.cmd(string.format('resize %d', win_height))
       vim.w.org_window_pos = vim.fn.win_screenpos(0)
     else
       vim.w.org_window_pos = nil
