@@ -30,7 +30,14 @@ end
 
 function Capture:_create_menu_items(templates)
   local menu_items = {}
-  for key, template in pairs(templates) do
+  local sort_keys = {}
+  for k, t in pairs(templates) do 
+      table.insert(sort_keys, k)
+  end
+  table.sort(sort_keys)
+
+  for _, key in ipairs(sort_keys) do
+    template = templates[key]
     if string.len(key) == 1 then
       local item = {
         key = key,
@@ -43,7 +50,7 @@ function Capture:_create_menu_items(templates)
       else
         item['label'] = template.description
         item['action'] = function()
-          return self:open_template(template)
+          return self:open_template(templates[key])
         end
       end
       table.insert(menu_items, item)
@@ -54,8 +61,8 @@ end
 
 function Capture:_create_prompt(templates)
   local menu_items = self:_create_menu_items(templates)
-  table.insert(menu_items, { label = '', key = '', separator = '-' })
-  table.insert(menu_items, { label = 'Quit', key = 'q' })
+  table.insert(menu_items, { label = 'Quit', key = 'q', 
+                             action = function() vim.cmd([[q!]]) end})
   table.insert(menu_items, { label = '', separator = ' ', length = 1 })
 
   return utils.menu('Select a capture template', menu_items, 'Template key')
@@ -323,7 +330,6 @@ function Capture:kill()
     self.wipeout_autocmd_id = nil
   end
   local prev_winnr = vim.api.nvim_buf_get_var(0, 'org_prev_window')
-  -- vim.api.nvim_win_close(0, true)
   vim.cmd([[:wq]])
   if prev_winnr and vim.api.nvim_win_is_valid(prev_winnr) then
     vim.api.nvim_set_current_win(prev_winnr)
