@@ -7,7 +7,7 @@ syn match org_hyperlinkURL				    contained "[^][]*\]\[" conceal
 syn match org_hyperlinkBracketsRight	contained "\]\{2}"     conceal
 
 hi OrgBold gui=bold cterm=bold
-hi OrgNow gui=bold cterm=bold ctermfg=8 ctermbg=11
+hi OrgNow gui=bold cterm=bold ctermfg=237 ctermbg=230
 hi OrgUnderline gui=underline cterm=underline
 hi default link OrgAgendaDay Statement
 hi default link OrgAgendaTags OrgBold

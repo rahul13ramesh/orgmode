@@ -1,4 +1,3 @@
-
 1) Capture
     * Quit 
         * q work in menu
@@ -7,5 +6,3 @@
 
 2) Agenda
     * Improved code folding
-    * 
-

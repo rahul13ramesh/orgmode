@@ -171,13 +171,15 @@ function AgendaView:build()
     local date_len = math.min(11, longest_items.label)
 
     if is_today then
+
         local now_time = Date:now()
         for _, agenda_item in ipairs(agenda_items) do
             agenda_item.hl_recent = 1
         end
-        for _, agenda_item in ipairs(agenda_items) do
+        for i = #agenda_items, 1, -1 do
+            agenda_item = agenda_items[i]
             if #agenda_item.highlights then
-                if now_time:is_before(agenda_item.headline_date, 'min') then
+                if now_time:is_after(agenda_item.headline_date, 'min') then
                     agenda_item.hl_recent = 0
                     break
                 end
@@ -259,14 +261,13 @@ function AgendaView.build_agenda_item_content(agenda_item, longest_category, lon
     date = ' ' .. utils.pad_right(agenda_item.label, longest_date)
   end
   local todo_keyword = agenda_item.headline.todo_keyword.value
-  local todo_padding = ''
-  if todo_keyword ~= '' and vim.trim(agenda_item.label):find(':$') then
-    todo_padding = ' '
-  end
-  todo_keyword = todo_padding .. todo_keyword
-  local line = string.format('%s%s %s', category, date, headline.title)
-  local date_pos = string.format('%s', category):len()
-  local date_pos_end = string.format('%s%s', category, date):len()
+  todo_keyword = string.sub(todo_keyword, 1, 4) .. '  '
+
+  local line = string.format('%s%s%s %s', category, todo_keyword, date, headline.title)
+
+  local todo_keyword_pos = string.format('%s', category):len()
+  local date_pos = string.format('%s%s', category, todo_keyword):len()
+  local date_pos_end = string.format('%s%s%s', category, todo_keyword, date):len()
   local winwidth = utils.winwidth()
   if #headline.tags > 0 then
     local tags_string = headline:tags_to_string()
@@ -282,15 +283,18 @@ function AgendaView.build_agenda_item_content(agenda_item, longest_category, lon
       hl.range = Range:new({
         start_line = line_nr + 1,
         end_line = line_nr + 1,
-        start_col = date_pos + 1,
-        end_col = date_pos_end + 1,
+        start_col = 10000,
+        end_col =   10001,
       })
+      print(vim.inspect(headline.title))
+      print(vim.inspect(hl))
       if hl.todo_keyword then
-        hl.range.start_col = 10000
-        hl.range.end_col = -1
-      end
-      if agenda_item.hl_recent == 0 then
+        hl.range.start_col = todo_keyword_pos + 1
+        hl.range.end_col = todo_keyword_pos + hl.todo_keyword:len() + 1
+      elseif agenda_item.hl_recent == 0 then
           hl.hlgroup = 'OrgNow'
+          hl.range.start_col = date_pos + 1
+          hl.range.end_col = date_pos_end - 1
       end
       return hl
     end, agenda_item.highlights)
