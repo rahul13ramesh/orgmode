@@ -262,6 +262,9 @@ function AgendaView.build_agenda_item_content(agenda_item, longest_category, lon
   end
   local todo_keyword = agenda_item.headline.todo_keyword.value
   todo_keyword = string.sub(todo_keyword, 1, 4) .. '  '
+  if #todo_keyword <= 4 then
+      todo_keyword = '      '
+  end
 
   local line = string.format('%s%s%s %s', category, todo_keyword, date, headline.title)
 
@@ -286,8 +289,6 @@ function AgendaView.build_agenda_item_content(agenda_item, longest_category, lon
         start_col = 10000,
         end_col =   10001,
       })
-      print(vim.inspect(headline.title))
-      print(vim.inspect(hl))
       if hl.todo_keyword then
         hl.range.start_col = todo_keyword_pos + 1
         hl.range.end_col = todo_keyword_pos + hl.todo_keyword:len() + 1
