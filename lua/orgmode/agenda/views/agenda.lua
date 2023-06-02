@@ -11,6 +11,27 @@ local function sort_by_date_or_priority(a, b)
   if a.headline:get_priority_sort_value() ~= b.headline:get_priority_sort_value() then
     return a.headline:get_priority_sort_value() > b.headline:get_priority_sort_value()
   end
+
+  -- print("------------------")
+  -- for k,v in pairs(a.date) do
+  --     print(k)
+  -- end
+  -- print("------------------")
+  -- for k,v in pairs(a) do
+  --     print(k)
+  -- end
+  --
+  --
+  --
+  -- if #a.headline_date.adjustments > 0 or #b.headline_date.adjustments > 0 then
+  --     if #a.headline_date.adjustments == 0 then 
+  --         return true
+  --     end
+  --     if #b.headline_date.adjustments == 0 then 
+  --         return false
+  --     end
+  -- end
+
   return a.headline_date:is_before(b.headline_date)
 end
 

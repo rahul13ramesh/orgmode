@@ -72,19 +72,26 @@ function AgendaTodosView.generate_view(items, content, filters)
     return math.max(acc, vim.api.nvim_strwidth(todo:get_category()))
   end, 0)
 
+  -- initialize variable to 0 integer
+  ind = 0
   for i, headline in ipairs(items) do
-    if filters:matches(headline) then
-      table.insert(content, AgendaTodosView.generate_todo_item(headline, longest_category, i + offset))
-    end
+    if headline.priority ~= 'C' and headline.todo_keyword.value == 'TODO' and (not string.find(headline.file, 'misc')) then
+        ind = ind + 1
+        if filters:matches(headline) then
+          table.insert(content, AgendaTodosView.generate_todo_item(headline, longest_category, ind + offset))
+        end
+    end 
   end
 
   return { items = items, content = content }
 end
 
 function AgendaTodosView.generate_todo_item(headline, longest_category, line_nr)
-  local category = '  ' .. utils.pad_right(string.format('%s:', headline:get_category()), longest_category + 1)
+  local category = '  ' .. utils.pad_right(string.format('%s ', headline:get_category()), longest_category + 1)
   local todo_keyword = headline.todo_keyword.value
   local todo_keyword_padding = todo_keyword ~= '' and ' ' or ''
+  todo_keyword = string.sub(todo_keyword, 1, 4)
+
   local line = string.format('  %s%s%s %s', category, todo_keyword_padding, todo_keyword, headline.title)
   local winwidth = utils.winwidth()
   if #headline.tags > 0 then
